@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/JRFID.iml" filepath="$PROJECT_DIR$/JRFID.iml" />
       <module fileurl="file://$PROJECT_DIR$/JRFID-Client.iml" filepath="$PROJECT_DIR$/JRFID-Client.iml" />
     </modules>
   </component>
