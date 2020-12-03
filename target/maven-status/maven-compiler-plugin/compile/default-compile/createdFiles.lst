@@ -1,4 +1,5 @@
 net\jrfid\lib\B1Module$1.class
+net\jrfid\system\SerialCom.class
 net\jrfid\JRFIDConfig.class
 net\jrfid\lib\B1Module$HeaderTypeT.class
 net\jrfid\lib\B1Module$UartCommandT.class

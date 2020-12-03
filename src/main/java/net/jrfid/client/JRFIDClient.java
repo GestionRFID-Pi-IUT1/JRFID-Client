@@ -1,13 +1,18 @@
 package net.jrfid.client;
 
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 import com.google.gson.Gson;
 import com.pi4j.io.gpio.*;
 import jline.console.ConsoleReader;
 import net.jrfid.JRFIDConfig;
 import net.jrfid.database.Connections;
+import net.jrfid.system.SerialCom;
 import net.jrfid.utils.log.JRFIDClientLogger;
 import org.apache.commons.dbcp2.BasicDataSource;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -37,9 +42,12 @@ public class JRFIDClient {
 
     private ScheduledExecutorService executor;
 
-    //Raspberry GPIO
+    /** Raspberry GPIO **/
     public GpioController controller;
     public GpioPinDigitalOutput buzzer;
+
+    /** Raspberry Serial Port **/
+    public SerialCom serialCom;
 
 
     public JRFIDClient() throws UnknownHostException {
@@ -50,7 +58,7 @@ public class JRFIDClient {
 
         //RASPBERRY Config
         this.controller = GpioFactory.getInstance();
-        this.buzzer = controller.provisionDigitalOutputPin(RaspiPin.GPIO_24, "Buzzer", PinState.HIGH);
+        this.buzzer = controller.provisionDigitalOutputPin(RaspiPin.GPIO_24, "Buzzer", PinState.LOW);
 
         log(Level.INFO,"---------------JRFIDClient---------------");
         log(Level.INFO,"-----------------------------------------");
@@ -87,18 +95,18 @@ public class JRFIDClient {
 
         mysqlVerification();
 
-        //Son de lancement PIN24
-        try {
-            for (int i=0; i<2; i++) {
-                buzzer.pulse(500);
-                Thread.sleep(800);
-            }
-        } catch (InterruptedException e){}
 
+        EnumerateComPorts();
+        serialCom = new SerialCom("ttyS0", 9600);
+
+        //Son de lancement PIN24
+        buzzer.pulse(500);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log(Level.INFO,"Fermeture de JRFIDClient..");
             log(Level.INFO,"Aurevoir!");
+            log(Level.INFO,"Deconnexion de la liaison Serial Port réussie.");
+            serialCom.closeSerialPort();
         }));
     }
 
@@ -166,6 +174,14 @@ public class JRFIDClient {
             }
         });
         log(Level.INFO,"Connexion avec succès: "+has[0]);
+    }
+
+    private void EnumerateComPorts() {
+        SerialPort[] ports = SerialPort.getCommPorts();
+        log(Level.INFO,"Ports disponible: ");
+        for (SerialPort port : ports) {
+            log(Level.INFO,"- "+port.getSystemPortName());
+        }
     }
 
     public ScheduledExecutorService getExecutor() {
