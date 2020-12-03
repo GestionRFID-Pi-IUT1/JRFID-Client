@@ -1,6 +1,7 @@
 package net.jrfid.client;
 
 import com.google.gson.Gson;
+import com.pi4j.io.gpio.*;
 import jline.console.ConsoleReader;
 import net.jrfid.JRFIDConfig;
 import net.jrfid.database.Connections;
@@ -36,12 +37,20 @@ public class JRFIDClient {
 
     private ScheduledExecutorService executor;
 
+    //Raspberry GPIO
+    public GpioController controller;
+    public GpioPinDigitalOutput buzzer;
+
 
     public JRFIDClient() throws UnknownHostException {
         client = this;
         this.logger = new JRFIDClientLogger(this);
 
         this.executor = Executors.newScheduledThreadPool(32);
+
+        //RASPBERRY Config
+        this.controller = GpioFactory.getInstance();
+        this.buzzer = controller.provisionDigitalOutputPin(RaspiPin.GPIO_24, "Buzzer", PinState.HIGH);
 
         log(Level.INFO,"---------------JRFIDClient---------------");
         log(Level.INFO,"-----------------------------------------");
@@ -78,8 +87,16 @@ public class JRFIDClient {
 
         mysqlVerification();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->
-        {
+        //Son de lancement PIN24
+        try {
+            for (int i=0; i<2; i++) {
+                buzzer.pulse(500);
+                Thread.sleep(800);
+            }
+        } catch (InterruptedException e){}
+
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log(Level.INFO,"Fermeture de JRFIDClient..");
             log(Level.INFO,"Aurevoir!");
         }));

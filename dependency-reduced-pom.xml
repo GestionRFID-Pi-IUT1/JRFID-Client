@@ -75,6 +75,14 @@
       <url>https://mvnrepository.com/artifact/</url>
     </repository>
     <repository>
+      <snapshots>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+      <id>oss-snapshots-repo</id>
+      <name>Sonatype OSS Maven Repository</name>
+      <url>https://oss.sonatype.org/content/groups/public</url>
+    </repository>
+    <repository>
       <id>mariadb-repo</id>
       <url>https://mvnrepository.com/artifact/mysql/mysql-connector-java</url>
     </repository>

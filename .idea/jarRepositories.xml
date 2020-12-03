@@ -7,6 +7,11 @@
       <option name="url" value="https://repo.maven.apache.org/maven2" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="oss-snapshots-repo" />
+      <option name="name" value="Sonatype OSS Maven Repository" />
+      <option name="url" value="https://oss.sonatype.org/content/groups/public" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="mariadb-repo" />
       <option name="name" value="mariadb-repo" />
       <option name="url" value="https://mvnrepository.com/artifact/mysql/mysql-connector-java" />

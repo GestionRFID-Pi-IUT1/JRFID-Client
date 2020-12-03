@@ -1,5 +1,6 @@
 package net.jrfid.database;
 
+import net.jrfid.client.JRFIDClient;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.sql.Connection;
