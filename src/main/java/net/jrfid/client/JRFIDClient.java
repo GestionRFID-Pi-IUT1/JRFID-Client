@@ -1,17 +1,22 @@
 package net.jrfid.client;
 
 import com.google.gson.Gson;
+import jline.console.ConsoleReader;
 import net.jrfid.JRFIDConfig;
 import net.jrfid.database.Connections;
+import net.jrfid.utils.log.JRFIDClientLogger;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class JRFIDClient {
 
@@ -23,6 +28,9 @@ public class JRFIDClient {
     private BasicDataSource connectionPool;
     private Connections connections;
 
+    private ConsoleReader consoleReader;
+    private Logger logger;
+
 
     private JRFIDConfig config;
 
@@ -31,11 +39,12 @@ public class JRFIDClient {
 
     public JRFIDClient() throws UnknownHostException {
         client = this;
+        this.logger = new JRFIDClientLogger(this);
 
         this.executor = Executors.newScheduledThreadPool(32);
 
-        System.out.println("---------------JRFIDClient---------------");
-        System.out.println("-----------------------------------------");
+        log(Level.INFO,"---------------JRFIDClient---------------");
+        log(Level.INFO,"-----------------------------------------");
 
         //CONFIG
         if (!checkConfigFile())
@@ -45,30 +54,39 @@ public class JRFIDClient {
         try {
             config = gson.fromJson(new String(Files.readAllBytes(configFile.toPath())), JRFIDConfig.class);
         } catch (IOException e) {
-            System.out.println("An error occurred.");
-            System.out.println("JRFIDClient will stop.");
+            log(Level.INFO,"Erreur de configuration .json");
+            log(Level.INFO,"JRFIDClient va s'arrêter.");
         }
 
-        System.out.println("------------------------------------------");
-        System.out.println("SQL CREDENTIALS -------------------------");
-        System.out.println("HOST IS " + config.getSqlHost());
-        System.out.println("DATABASE IS " + config.getSqlDatabase());
-        System.out.println("USER IS " + config.getSqlUser());
-        System.out.println("PASSWORD IS " + config.getSqlPassword());
-        System.out.println("------------------------------------------");
+        try {
+            consoleReader = new ConsoleReader();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        log(Level.INFO,"------------------------------------------");
+        log(Level.INFO,"SQL ID -------------------------");
+        log(Level.INFO,"HOST: " + config.getSqlHost());
+        log(Level.INFO,"DATABASE: " + config.getSqlDatabase());
+        log(Level.INFO,"USER: " + config.getSqlUser());
+        log(Level.INFO,"PASSWORD: " + config.getSqlPassword());
+        log(Level.INFO,"------------------------------------------");
 
         this.initPool();
 
+        consoleReader.setExpandEvents(false);
+
+        mysqlVerification();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() ->
         {
-            System.out.println("Fermeture de JRFIDClient..");
-            System.out.println("Aurevoir!");
+            log(Level.INFO,"Fermeture de JRFIDClient..");
+            log(Level.INFO,"Aurevoir!");
         }));
     }
 
     private void initPool(){
-        System.out.println("INFO: MYSQL Tentative de connexion en cours...");
+        log(Level.INFO,"INFO: MYSQL Tentative de connexion en cours...");
         connectionPool = new BasicDataSource();
         connectionPool.setDriverClassName("com.mysql.jdbc.Driver");
         connectionPool.setUsername(config.getSqlUser());
@@ -81,9 +99,9 @@ public class JRFIDClient {
 
     private boolean checkConfigFile() {
         if (!configFile.exists()) {
-            System.out.println("Could not find \"" + configFile.getName() + "\"");
+            log(Level.INFO,"Impossible de trouver \"" + configFile.getName() + "\"");
             try {
-                System.out.println("Creating the \"" + configFile.getName() + "\" file.");
+                log(Level.INFO,"Création du fichier config \"" + configFile.getName() + "\".");
                 if (configFile.createNewFile()) {
                     config = new JRFIDConfig();
                     config.setDebug(false);
@@ -96,30 +114,51 @@ public class JRFIDClient {
                     Gson gson = new Gson();
                     Files.write(configFile.toPath(), gson.toJson(config, config.getClass()).getBytes());
 
-                    System.out.println("Credentials file created.");
-                    System.out.println("-------------------------------");
-                    System.out.println("PLEASE COMPLETE THE CONFIG FILE");
-                    System.out.println("-------------------------------");
-                    System.out.println("###############################");
-                    System.out.println("###############################");
-                    System.out.println("###############################");
-                    System.out.println("UNSTABLE BEHAVIOUR INCOMING. PLEASE RELOAD THE SERVER.");
-                    System.out.println("###############################");
-                    System.out.println("###############################");
-                    System.out.println("###############################");
+                    log(Level.INFO,"Fichier configuration créé.");
+                    log(Level.INFO,"-------------------------------");
+                    log(Level.INFO,"S'il vous plaît, complétez le fichier");
+                    log(Level.INFO,"-------------------------------");
+                    log(Level.INFO,"###############################");
+                    log(Level.INFO,"###############################");
+                    log(Level.INFO,"###############################");
+                    log(Level.INFO,"Version instable en cours, veuillez redémarrer.");
+                    log(Level.INFO,"###############################");
+                    log(Level.INFO,"###############################");
+                    log(Level.INFO,"###############################");
                 } else {
-                    System.out.println("Unable to create the \"" + configFile.getName() + "\" file.");
+                    log(Level.INFO,"Impossible de créer le fichier \"" + configFile.getName() + "\".");
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
-            System.out.println("You should shut down the server.");
+            log(Level.INFO,"Vous devriez shutdown le serveur.");
             return false;
         }
-        System.out.println("Credentials file found!");
+        log(Level.INFO,"Fichier configuration trouvé !");
         return true;
     }
 
+
+    public void mysqlVerification(){
+        boolean[] has = {false};
+        connections.query("SELECT password FROM system WHERE password = 'raspberry'", (ResultSet rs) -> {
+            try {
+                if(rs.next()) has[0] = true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+        log(Level.INFO,"Connexion avec succès: "+has[0]);
+    }
+
+    public ScheduledExecutorService getExecutor() {
+        return executor;
+    }
+    public ConsoleReader getConsoleReader() { return consoleReader; }
+
+    public Logger getLogger() { return logger; }
+
+    public void log(Level level, String message) { logger.log(level, message); }
 
     public Connections getConnections() { return connections; }
 

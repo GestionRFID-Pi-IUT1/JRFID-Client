@@ -1,0 +1,9 @@
+net\jrfid\Main.class
+net\jrfid\utils\log\LogDispatcher.class
+net\jrfid\database\Connections.class
+net\jrfid\client\JRFIDClient.class
+net\jrfid\JRFIDConfig.class
+net\jrfid\utils\log\ConciseFormatter.class
+net\jrfid\utils\log\StackTraceData.class
+net\jrfid\utils\log\JRFIDClientLogger.class
+net\jrfid\utils\log\LoggingOutputStream.class
