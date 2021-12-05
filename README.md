@@ -1,4 +1,4 @@
-Projet étudiant (IUT1 - UGA), code JRFID-Client
+Projet étudiant, code JRFID-Client
 
 Materiel:
 - Raspberry PI 3 B+
